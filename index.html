@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Axial/Coronal/Sagittal Classifier</title>
+  <!-- Load Tailwind CSS for modern styling -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Load TensorFlow.js -->
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
+  
+  <style>
+    /* I've borrowed some of the core styles from your style.css 
+      and combined them with Tailwind for a clean look.
+    */
+    @import url("https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,200..800&display=swap");
+
+    body {
+      font-family: 'Bricolage Grotesque', sans-serif;
+      background-color: #f5f5f5;
+    }
+
+    /* Custom class for the dropzone */
+    .dropzone-dashed {
+      border: 2px dashed #aaa;
+      transition: all 0.3s ease;
+    }
+
+    .dropzone-dashed.dragover {
+      background-color: #e0f2fe;
+      /* Tailwind 'bg-sky-100' */
+      border-color: #0ea5e9;
+      /* Tailwind 'border-sky-500' */
+    }
+  </style>
+</head>
+
+<body class="text-center">
+
+  <!-- Header -->
+  <header class="w-full bg-[#7b3f00] p-8 text-white">
+    <div class="container mx-auto max-w-3xl">
+      <h1 class="text-4xl font-bold">MRI Plane Orientation Classifier</h1>
+      <h3 class="text-xl opacity-90 mt-2">Powered by AlexNet & TensorFlow.js</h3>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <div class="container mx-auto max-w-2xl p-5">
+    
+    <!-- Dropzone Feature -->
+    <div class="w-full">
+      <!-- The Dropzone -->
+      <div id="dropzone"
+        class="dropzone-dashed w-full h-64 rounded-xl bg-white shadow-md flex flex-col justify-center items-center cursor-pointer p-4">
+        <svg class="w-16 h-16 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M12 16.5V9.75m0 0l-3 3m3-3l3 3M6.75 19.5a4.5 4.5 0 01-1.41-8.775 5.25 5.25 0 0110.33-2.33 4.5 4.5 0 01-1.41 8.775H6.75z" />
+        </svg>
+        <p class="text-gray-500 mt-4 text-lg">Drag & drop an image file here</p>
+        <p class="text-gray-400 text-sm">(axial, coronal, or sagittal view)</p>
+      </div>
+
+      <!-- Image Preview -->
+      <div id="image-container" class="mt-6 hidden">
+        <h2 class="text-2xl font-semibold text-gray-700 mb-4">Your Image:</h2>
+        <img id="preview-image" src="#" alt="Image preview" class="max-w-full md:max-w-md mx-auto rounded-lg shadow-lg" />
+      </div>
+
+      <!-- Result Container -->
+      <div id="result-container" class="mt-6 hidden">
+        <h2 class="text-2xl font-semibold text-gray-700 mb-4">Prediction:</h2>
+        <div id="result-text" class_name="text-3xl font-bold p-6 rounded-lg shadow-inner inline-block">
+          <!-- Result will be injected here -->
+        </div>
+      </div>
+      
+      <!-- Status Box -->
+      <div id="status-box" class="mt-6 p-4 text-gray-600 bg-gray-100 rounded-lg shadow-inner hidden">
+        Loading model...
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    // --- This wrapper FIXES the error ---
+    // It waits for the HTML page to fully load before running any JavaScript
+    document.addEventListener("DOMContentLoaded", () => {
+    
+      const dropzone = document.getElementById("dropzone");
+      const imageContainer = document.getElementById("image-container");
+      const previewImage = document.getElementById("preview-image");
+      const resultContainer = document.getElementById("result-container");
+      const resultText = document.getElementById("result-text");
+      const statusBox = document.getElementById("status-box");
+
+      const MODEL_PATH = './web_model/model.json';
+      const CLASS_NAMES = ['axial', 'coronal', 'sagittal'];
+      let model = null;
+
+      // --- 1. Model Loading ---
+      async function loadModel() {
+        if (model) return; // Model is already loaded
+
+        statusBox.classList.remove("hidden");
+        statusBox.textContent = "Loading model (this may take a moment)...";
+        console.log("Loading model...");
+        
+        try {
+          // Load the GraphModel
+          model = await tf.loadGraphModel(MODEL_PATH);
+          console.log("Model loaded successfully.");
+          statusBox.textContent = "Model loaded. Ready to predict.";
+          // Hide status after a delay
+          setTimeout(() => { statusBox.classList.add("hidden"); }, 2000);
+        } catch (err) {
+          console.error("Failed to load model:", err);
+          statusBox.textContent = "Error: Could not load model. Check console.";
+          statusBox.style.backgroundColor = "#fee2e2"; // bg-red-100
+          statusBox.style.color = "#b91c1c"; // text-red-700
+        }
+      }
+
+      // --- 2. Dropzone Event Listeners ---
+      // Add a check in case the element still isn't found
+      if (dropzone) {
+        dropzone.addEventListener("dragover", (event) => {
+          event.preventDefault(); // Prevent default behavior (file opening)
+          dropzone.classList.add("dragover");
+        });
+
+        dropzone.addEventListener("dragleave", () => {
+          dropzone.classList.remove("dragover");
+        });
+
+        dropzone.addEventListener("drop", (event) => {
+          event.preventDefault();
+          dropzone.classList.remove("dragover");
+
+          const files = event.dataTransfer.files;
+          if (files.length > 0) {
+            const file = files[0];
+            if (file.type.startsWith("image/")) {
+              handleImage(file);
+            } else {
+              // Replaced alert() with a non-blocking status message
+              statusBox.classList.remove("hidden");
+              statusBox.textContent = "Error: Please drop an image file.";
+              statusBox.style.backgroundColor = "#fee2e2";
+              statusBox.style.color = "#b91c1c";
+            }
+          }
+        });
+      } else {
+        console.error("Fatal Error: Dropzone element not found.");
+      }
+
+      // --- 3. Image Handling & Prediction ---
+      async function handleImage(file) {
+        // Show image preview
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          previewImage.src = e.target.result;
+          imageContainer.classList.remove("hidden");
+          // Run prediction *after* the image is set
+          runPrediction(previewImage); 
+        }
+        reader.readAsDataURL(file);
+      }
+
+      async function runPrediction(imgElement) {
+        // Ensure model is loaded first
+        await loadModel();
+        if (!model) {
+          console.error("Model is not loaded. Aborting prediction.");
+          return;
+        }
+        
+        statusBox.classList.remove("hidden");
+        statusBox.textContent = "Preprocessing and predicting...";
+        statusBox.style.backgroundColor = ""; // Reset styles
+        statusBox.style.color = "";
+
+        // Preprocess the image
+        const inputTensor = preprocessImage(imgElement);
+
+        // Run prediction
+        // GraphModels often need a named input object
+        const result = model.predict({ 'input_1': inputTensor });
+
+        // Get probabilities and find the max
+        const probabilities = result.softmax();
+        const predictedIndex = probabilities.argMax(-1).dataSync()[0];
+        const predictedClass = CLASS_NAMES[predictedIndex];
+        const confidence = (probabilities.dataSync()[predictedIndex] * 100).toFixed(2);
+
+        // Display the result
+        resultText.innerHTML = `
+          <span class="text-4xl font-bold text-sky-700">${predictedClass}</span>
+          <br>
+          <span class="text-lg text-gray-500">Confidence: ${confidence}%</span>
+        `;
+        resultContainer.classList.remove("hidden");
+        statusBox.classList.add("hidden");
+        
+        // Clean up tensors
+        inputTensor.dispose();
+        result.dispose();
+        probabilities.dispose();
+      }
+
+      // --- 4. Preprocessing Function (The most important part!) ---
+      /**
+       * Preprocesses an image for your AlexNet classifier (GraphModel).
+       * Replicates: Resize(224), Grayscale(3), ToTensor(), Normalize()
+       * Output Shape: [1, 224, 224, 3]
+       */
+      function preprocessImage(imgElement) {
+        return tf.tidy(() => {
+          // 1. Create tensor from image
+          let tensor = tf.browser.fromPixels(imgElement);
+
+          // 2. Resize to [224, 224, 3]
+          let resized = tf.image.resizeBilinear(tensor, [224, 224]);
+
+          // 3. Grayscale(3):
+          let grayscaled = resized.mean(2).expandDims(-1); // [224, 224, 1]
+          let tiled = grayscaled.tile([1, 1, 3]);          // [224, 224, 3]
+
+          // 4. ToTensor(): Scale to [0, 1]
+          let scaled = tiled.div(255.0);
+
+          // 5. Normalize(mean, std)
+          const mean = tf.tensor([0.485, 0.456, 0.406]);
+          const std = tf.tensor([0.229, 0.224, 0.225]);
+          let normalized = scaled.sub(mean).div(std); // Shape is [224, 224, 3]
+
+          // 6. Transpose from [H, W, C] to PyTorch's [C, H, W]
+          //    let transposed = normalized.transpose([2, 0, 1]);  <--- REMOVED THIS LINE
+
+          // 7. Add batch dimension: [1, 224, 224, 3]
+          let finalTensor = normalized.expandDims(0); // <--- THIS IS NOW CORRECT
+          
+          return finalTensor;
+        });
+      }
+
+      // Pre-load the model on page load for a faster first prediction
+      loadModel();
+
+    }); // <-- Closes the DOMContentLoaded listener
+  </script>
+</body>
+</html>
+
