@@ -126,7 +126,15 @@ function App() {
         const backend = tf.getBackend();
         addLog(`Backend: ${backend.toUpperCase()} (Hardware Accel)`);
         
-        const loaded = await tf.loadGraphModel('/tfjs_models/2.5D_tfjs/model.json').catch(() => null);
+        // --- FIX IS HERE: WRAP THE PATH IN withBase() ---
+        const modelPath = withBase('models/plane_detection/model.json');
+        
+        addLog(`Attempting to load model from: ${modelPath}`);
+        
+        const loaded = await tf.loadGraphModel(modelPath).catch((e) => {
+            console.error(e); // Log actual error to browser console
+            return null;
+        });
         
         if (loaded) {
             setModel(loaded);
@@ -134,7 +142,7 @@ function App() {
             addLog("Plane Classification Model Loaded.");
         } else {
             setLoadingMsg("SIMULATION MODE");
-            addLog("WARN: Model file missing. Using heuristics.");
+            addLog("WARN: Model file missing or 404. Using heuristics.");
         }
       } catch (e) {
         addLog(`ERR: ${e.message}`);
