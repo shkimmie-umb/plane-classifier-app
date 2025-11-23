@@ -3,11 +3,19 @@ import * as tf from '@tensorflow/tfjs';
 import { useDropzone } from 'react-dropzone'; // Optional: npm install react-dropzone or use native API below
 import './App.css';
 
+// --- HELPER FOR ASSETS ---
+// Automatically prepends '/plane-classifier-app/' in production
+const withBase = (path) => {
+    // If it's already an external URL (http/https), leave it alone
+    if (path.startsWith('http')) return path;
+    // Otherwise, prepend the Vite Base URL
+    return `${import.meta.env.BASE_URL}${path.startsWith('/') ? path.slice(1) : path}`;
+};
 // --- CONFIGURATION: DEFAULT SAMPLES ---
 const DEFAULT_SAMPLES = [
   {
     id: 'def_axial_1',
-    src: '/images/sample_axial.jpg',
+    src: withBase('/images/sample_axial.jpg'),
     label: 'Ref_Axial_01',
     type: 'mri',
     fallbackPlane: 'AXIAL',
@@ -15,7 +23,7 @@ const DEFAULT_SAMPLES = [
   },
   {
     id: 'def_coronal_1',
-    src: '/images/sample_coronal.jpg',
+    src: withBase('/images/sample_coronal.jpg'),
     label: 'Ref_Coronal_01',
     type: 'mri',
     fallbackPlane: 'CORONAL',
@@ -23,7 +31,7 @@ const DEFAULT_SAMPLES = [
   },
   {
     id: 'def_sag_1',
-    src: '/images/sample_sagittal.jpg', // Ensure you have this or duplicate another
+    src: withBase('/images/sample_sagittal.jpg'), // Ensure you have this or duplicate another
     label: 'Ref_Sagittal_01',
     type: 'mri',
     fallbackPlane: 'SAGITTAL',
@@ -31,7 +39,7 @@ const DEFAULT_SAMPLES = [
   },
   {
     id: 'def_ood_noise',
-    src: '/images/dog_ood.jpg', // External test
+    src: withBase('/images/dog_ood.jpg'), // External test
     label: 'OOD_Input_Dog',
     type: 'ood',
     fallbackPlane: 'UNCERTAIN',
@@ -39,7 +47,7 @@ const DEFAULT_SAMPLES = [
   },
   {
     id: 'def_ood_scene',
-    src: '/images/ood_scene1.jpg', // External test
+    src: withBase('/images/ood_scene1.jpg'), // External test
     label: 'OOD_Input_Scene',
     type: 'ood',
     fallbackPlane: 'UNCERTAIN',
@@ -47,7 +55,7 @@ const DEFAULT_SAMPLES = [
   },
   {
     id: 'def_ood_coffee',
-    src: '/images/ood_food2.jpeg', // External test
+    src: withBase('/images/ood_food2.jpeg'), // External test
     label: 'OOD_Input_Coffee',
     type: 'ood',
     fallbackPlane: 'UNCERTAIN',
@@ -55,7 +63,7 @@ const DEFAULT_SAMPLES = [
   },
   {
     id: 'def_ood_melanoma1',
-    src: '/images/melanoma1.jpg', // External test
+    src: withBase('/images/melanoma1.jpg'), // External test
     label: 'OOD_Input_Melanoma1',
     type: 'ood',
     fallbackPlane: 'UNCERTAIN',
@@ -63,7 +71,7 @@ const DEFAULT_SAMPLES = [
   },
   {
     id: 'def_ood_melanoma2',
-    src: '/images/melanoma2.jpg', // External test
+    src: withBase('/images/melanoma2.jpg'), // External test
     label: 'OOD_Input_Melanoma2',
     type: 'ood',
     fallbackPlane: 'UNCERTAIN',
@@ -71,7 +79,7 @@ const DEFAULT_SAMPLES = [
   },
   {
     id: 'def_ood_melanoma3',
-    src: '/images/melanoma3.jpg', // External test
+    src: withBase('/images/melanoma3.jpg'), // External test
     label: 'OOD_Input_Melanoma3',
     type: 'ood',
     fallbackPlane: 'UNCERTAIN',
@@ -79,7 +87,7 @@ const DEFAULT_SAMPLES = [
   },
   {
     id: 'def_ood_melanoma4',
-    src: '/images/melanoma4.jpg', // External test
+    src: withBase('/images/melanoma4.jpg'), // External test
     label: 'OOD_Input_Melanoma4',
     type: 'ood',
     fallbackPlane: 'UNCERTAIN',
