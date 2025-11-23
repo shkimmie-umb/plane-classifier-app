@@ -1,0 +1,279 @@
+:root {
+  --bg-main: #0f172a;
+  --bg-panel: #1e293b;
+  --text-pri: #e2e8f0;
+  --text-sec: #94a3b8;
+  --accent-cyan: #0ea5e9;
+  --accent-red: #ef4444;
+  --border: #334155;
+}
+
+/* 1. GLOBAL RESET & WINDOW LOCK */
+html, body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  background-color: var(--bg-main);
+  color: var(--text-pri);
+  font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  overflow: hidden; /* Critical: Stops the whole page from scrolling */
+  box-sizing: border-box;
+}
+
+*, *:before, *:after {
+  box-sizing: inherit;
+}
+
+#root {
+  width: 100%;
+  height: 100%;
+}
+
+/* 2. DASHBOARD CONTAINER (Pinned to edges) */
+.dashboard {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  max-width: 1600px;
+  margin: 0 auto;
+}
+
+/* 3. HEADER (Rigid, never shrinks) */
+header {
+  flex: 0 0 auto; 
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 15px;
+  padding-bottom: 15px;
+  border-bottom: 1px solid var(--border);
+  z-index: 10;
+}
+
+.header-top { 
+  display: flex; 
+  justify-content: space-between; 
+  align-items: center; 
+}
+
+h1 { margin: 0; font-size: 1.6rem; line-height: 1; }
+.status-bar { font-size: 0.8rem; color: var(--text-sec); }
+
+.research-banner {
+  background: rgba(14, 165, 233, 0.08);
+  border: 1px solid #1e3a8a;
+  padding: 8px 12px;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  display: flex; 
+  align-items: center;
+}
+
+.research-banner a { 
+  color: var(--accent-cyan); 
+  text-decoration: none; 
+  margin-left: 5px; 
+  border-bottom: 1px dashed var(--accent-cyan); 
+}
+
+/* 4. WORKSPACE (Takes all remaining height) */
+.workspace-grid {
+  flex: 1;
+  display: flex;
+  gap: 20px;
+  min-height: 0; /* CRITICAL: Allows internal scrolling */
+  overflow: hidden;
+}
+
+/* 5. SIDEBAR (Fixed Width) */
+.sidebar-panel {
+  flex: 0 0 280px;
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 15px;
+  display: flex;
+  flex-direction: column;
+}
+
+.upload-zone {
+  flex: 0 0 auto;
+  border: 2px dashed #475569;
+  background: rgba(255,255,255,0.02);
+  border-radius: 8px;
+  padding: 20px; 
+  text-align: center;
+  margin-bottom: 15px; 
+  cursor: pointer; 
+  color: var(--accent-cyan);
+  transition: background 0.2s;
+}
+.upload-zone:hover { background: rgba(14, 165, 233, 0.1); }
+
+.thumbnail-list {
+  flex: 1;
+  overflow-y: auto; /* Scroll ONLY the list */
+  display: flex; 
+  flex-direction: column; 
+  gap: 8px; 
+  padding-right: 4px;
+}
+
+.list-item {
+  display: flex; 
+  align-items: center;
+  background: #0f172a; 
+  border: 1px solid var(--border);
+  border-radius: 6px; 
+  padding: 5px; 
+  cursor: pointer;
+  min-height: 55px;
+}
+.list-item:hover { background: #334155; }
+.list-item.selected { border-color: var(--accent-cyan); background: rgba(14, 165, 233, 0.1); }
+
+.list-item img { 
+  width: 45px; height: 45px; 
+  object-fit: cover; 
+  border-radius: 4px; 
+  margin-right: 10px; 
+  flex-shrink: 0;
+}
+
+.list-meta { overflow: hidden; display: flex; flex-direction: column; }
+.list-label { font-size: 0.8rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #e2e8f0; }
+
+/* 6. MAIN STAGE (Right Side) */
+.main-stage-panel {
+  flex: 1;
+  display: flex; 
+  flex-direction: column;
+  gap: 15px;
+  min-width: 0; /* Prevents flex blowout */
+}
+
+/* TOP ROW: Image + Metrics */
+.stage-top-row {
+  flex: 2; /* 66% Height */
+  display: flex; 
+  gap: 15px;
+  min-height: 0;
+}
+
+/* Preview Box - The Anchor */
+.stage-preview-container {
+  flex: 2; /* 66% Width */
+  background: #000;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  position: relative; /* Anchor for absolute image */
+  overflow: hidden;
+}
+
+/* The Image - Locked to container size */
+#preview-img {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain; /* Never crop, never zoom */
+  display: block;
+}
+
+.image-overlay-label {
+  position: absolute; 
+  top: 15px; 
+  left: 15px;
+  background: rgba(0,0,0,0.7);
+  padding: 5px 10px; 
+  border-radius: 4px;
+  font-size: 0.85rem; 
+  color: #fff; 
+  font-family: monospace;
+  pointer-events: none;
+  z-index: 5;
+}
+
+/* Metrics Column */
+.stage-metrics-column {
+  flex: 1; /* 33% Width */
+  display: flex; 
+  flex-direction: column; 
+  gap: 15px;
+  min-width: 240px;
+}
+
+.metric-card {
+  flex: 1; /* Equal Height Cards */
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-left: 5px solid var(--border);
+  border-radius: 12px;
+  padding: 20px;
+  display: flex; 
+  flex-direction: column; 
+  justify-content: center;
+  min-height: 0;
+}
+
+.safe-state { border-left-color: var(--accent-cyan); }
+.ood-state { border-left-color: var(--accent-red); }
+
+.metric-value-large { font-size: 2.2rem; font-weight: 800; margin: 5px 0; color: #fff; line-height: 1.1; }
+
+/* BOTTOM ROW: Logs */
+.stage-logs-container {
+  flex: 1; /* 33% Height */
+  background: #000;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 10px;
+  display: flex; 
+  flex-direction: column;
+  min-height: 0;
+}
+
+.console-log-fill {
+  flex: 1;
+  overflow-y: auto;
+  color: #22c55e;
+  font-family: 'Courier New', monospace;
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+
+/* UTILS & COLORS */
+.text-sec { color: var(--text-sec); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; margin: 0; }
+.text-cyan { color: var(--accent-cyan); }
+.text-red { color: var(--accent-red); }
+.mono { font-family: 'Courier New', monospace; }
+
+/* Entropy Bar */
+.entropy-track-large { 
+  height: 14px; 
+  background: #334155; 
+  border-radius: 7px; 
+  position: relative; 
+  margin-top: 10px; 
+}
+.entropy-fill-large { 
+  height: 100%; 
+  border-radius: 7px; 
+  transition: width 0.3s ease-out; 
+}
+.threshold-line { 
+  position: absolute; 
+  top: -4px; 
+  bottom: -4px; 
+  width: 2px; 
+  background: #fff; 
+  z-index: 5; 
+  box-shadow: 0 0 4px rgba(0,0,0,0.5);
+}
